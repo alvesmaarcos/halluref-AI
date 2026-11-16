@@ -1,0 +1,673 @@
+{
+  "arquivo_origem": "sample_references.bib",
+  "formato_origem": "BIB",
+  "data_hora_iso": "2026-11-10T15:42:56.155226+00:00",
+  "secao_referencias_isolada_preview": "@article{lecun2015deep_valida,\n  author    = {LeCun, Yann and Bengio, Yoshua and Hinton, Geoffrey},\n  title     = {Deep learning},\n  journal   = {Nature},\n  year      = {2015},\n  volume    = {521},\n  pages     = {436--444},\n  doi       = {10.1038/nature14539}\n}\n\n@article{ghost2024alucinada,\n  author    = {Almeida, Lucas and Ferraz, Beatriz and Montebello, Ricardo},\n  title     = {Quantum Hyper-Dimensional Self-Correcting Transformers for Autonomous Sub-Symbolic Reasoning in Zero-Gravity Edge Networks},\n  journal   = {Journal of Advanced Synthetic Intelligence Research},\n  year      = {2024}\n}\n\n@inproceedings{chimera2017alucinada,\n  author    = {Pereira, Carlos Eduardo and Oliveira, Mariana Souza and Santos, Roberto},\n  title     = {Attention Is All You Need},\n  booktitle = {Advances in Neural Information Processing Systems},\n  year      = {2017}\n}\n\n@article{doifake2023alucinada,\n  author    = {Machado, Henrique and Tavares, Fernanda},\n  title     = {Stochastic Meta-Gradient Alignment for Non-Euclidean Graph Hallucination Suppression},\n  journal   = {IEEE Transactions on Fictional Computing},\n  year      = {2023},\n  doi       = {10.1038/s41586-099-99999-z}\n}\n\n@article{doihijacked2021alucinada,\n  author    = {Ribeiro, Gustavo and Mendes, Camila},\n  title     = {Synthesizing Novel Biodegradable Polymers from Deep Marine Algae Extracts},\n  journal   = {International Journal of Marine Chemistry},\n  year      = {2021},\n  doi       = {10.1038/nature14539}\n}\n\n@article{yeardistortion2\n... [truncado na visualização]",
+  "total_analisado": 8,
+  "total_valido": 1,
+  "total_suspeito": 3,
+  "total_alucinado": 4,
+  "resultados": [
+    {
+      "indice": 1,
+      "referencia_extraida": {
+        "texto_original": "@article{lecun2015deep_valida,\n  author    = {LeCun, Yann and Bengio, Yoshua and Hinton, Geoffrey},\n  title     = {Deep learning},\n  journal   = {Nature},\n  year      = {2015},\n  volume    = {521},\n  pages     = {436--444},\n  doi       = {10.1038/nature14539}\n}",
+        "titulo": "Deep learning",
+        "autores": [
+          "LeCun, Yann",
+          "Bengio, Yoshua",
+          "Hinton, Geoffrey"
+        ],
+        "ano": 2015,
+        "veiculo": "Nature",
+        "doi": "10.1038/nature14539",
+        "url": null,
+        "tipo_inferido": "article"
+      },
+      "status_final": "VÁLIDA",
+      "categoria_taxonomia": "Nenhuma (Referência Íntegra)",
+      "diagnostico_explicativo": "Referência íntegra validada na base Crossref: 'Deep learning' (Yann LeCun, Yoshua Bengio, Geoffrey Hinton, 2015). Similaridade de título: 100.0% (>= 85%), correspondência de autoria ALTA e ano exato confirmado.",
+      "acao_recomendada": "Nenhuma ação necessária. Referência íntegra.",
+      "melhor_correspondencia_oficial": {
+        "fonte_api": "Crossref",
+        "titulo_oficial": "Deep learning",
+        "autores_oficiais": [
+          "Yann LeCun",
+          "Yoshua Bengio",
+          "Geoffrey Hinton"
+        ],
+        "ano_oficial": 2015,
+        "veiculo_oficial": "Nature",
+        "doi_oficial": "10.1038/nature14539",
+        "url_oficial": "https://doi.org/10.1038/nature14539",
+        "tipo_oficial": "journal-article"
+      },
+      "metricas": {
+        "doi_informado": "10.1038/nature14539",
+        "doi_resolvido": true,
+        "doi_status": "VALIDO_CORRESPONDENTE",
+        "similaridade_titulo_pct": 100.0,
+        "faixa_similaridade_titulo": "FORTE",
+        "correspondencia_autoria": "ALTA",
+        "primeiro_autor_coincide": true,
+        "intersecao_demais_autores_pct": 100.0,
+        "sobrenomes_citados": [
+          "lecun",
+          "bengio",
+          "hinton"
+        ],
+        "sobrenomes_oficiais": [
+          "lecun",
+          "bengio",
+          "hinton"
+        ],
+        "sobrenomes_em_comum": [
+          "lecun",
+          "bengio",
+          "hinton"
+        ],
+        "diferenca_ano": 0,
+        "ano_aceitavel": true,
+        "excecao_escopo_rn05": false,
+        "motivo_rn05": null
+      },
+      "rastro_tools": [
+        {
+          "tool_name": "resolve_doi_tool",
+          "arguments": {
+            "doi": "10.1038/nature14539"
+          },
+          "summary_result": "DOI '10.1038/nature14539' resolvido via Crossref. Título oficial: 'Deep learning' (Similaridade: 100.0% - FORTE). Status DOI: VALIDO_CORRESPONDENTE. Autoria: ALTA.",
+          "candidates_found": 1,
+          "best_similarity_pct": 100.0
+        }
+      ]
+    },
+    {
+      "indice": 2,
+      "referencia_extraida": {
+        "texto_original": "@article{ghost2024alucinada,\n  author    = {Almeida, Lucas and Ferraz, Beatriz and Montebello, Ricardo},\n  title     = {Quantum Hyper-Dimensional Self-Correcting Transformers for Autonomous Sub-Symbolic Reasoning in Zero-Gravity Edge Networks},\n  journal   = {Journal of Advanced Synthetic Intelligence Research},\n  year      = {2024}\n}",
+        "titulo": "Quantum Hyper-Dimensional Self-Correcting Transformers for Autonomous Sub-Symbolic Reasoning in Zero-Gravity Edge Networks",
+        "autores": [
+          "Almeida, Lucas",
+          "Ferraz, Beatriz",
+          "Montebello, Ricardo"
+        ],
+        "ano": 2024,
+        "veiculo": "Journal of Advanced Synthetic Intelligence Research",
+        "doi": null,
+        "url": null,
+        "tipo_inferido": "article"
+      },
+      "status_final": "ALUCINADA",
+      "categoria_taxonomia": "Invenção Total (Ghost Reference)",
+      "diagnostico_explicativo": "Invenção Total (Ghost Reference — RN02): Após consulta em cascata no Crossref, OpenAlex e Semantic Scholar, nenhuma obra publicada corresponde ao título 'Quantum Hyper-Dimensional Self-Correcting Transformers for Autonomous Sub-Symbolic Reasoning in Zero-Gravity Edge Networks' (melhor similaridade encontrada: 57.6%, inferior ao limiar mínimo de 60%). Padrão típico de referência fabricada por modelo de linguagem.",
+      "acao_recomendada": "Remover a referência do artigo ou substituir por uma fonte real verificada.",
+      "melhor_correspondencia_oficial": {
+        "fonte_api": "Crossref",
+        "titulo_oficial": "A Self-Correcting Agentic AI Framework for Autonomous Reasoning and Decision-Making",
+        "autores_oficiais": [
+          "Vaibhav Gajananrao Ingole"
+        ],
+        "ano_oficial": 2026,
+        "veiculo_oficial": "International Journal of Engineering and Creative Science",
+        "doi_oficial": "10.66631/ijecs.2026.9.11.5",
+        "url_oficial": "https://doi.org/10.66631/ijecs.2026.9.11.5",
+        "tipo_oficial": "journal-article"
+      },
+      "metricas": {
+        "doi_informado": null,
+        "doi_resolvido": false,
+        "doi_status": "NAO_INFORMADO",
+        "similaridade_titulo_pct": 57.56,
+        "faixa_similaridade_titulo": "BAIXA",
+        "correspondencia_autoria": "SEM_INTERSECAO",
+        "primeiro_autor_coincide": false,
+        "intersecao_demais_autores_pct": 0.0,
+        "sobrenomes_citados": [
+          "almeida",
+          "ferraz",
+          "montebello"
+        ],
+        "sobrenomes_oficiais": [
+          "ingole"
+        ],
+        "sobrenomes_em_comum": [],
+        "diferenca_ano": 2,
+        "ano_aceitavel": true,
+        "excecao_escopo_rn05": false,
+        "motivo_rn05": null
+      },
+      "rastro_tools": [
+        {
+          "tool_name": "search_crossref_tool",
+          "arguments": {
+            "query_title": "Quantum Hyper-Dimensional Self-Correcting Transformers for Autonomous Sub-Symbolic Reasoning in Zero-Gravity Edge Networks"
+          },
+          "summary_result": "Crossref: 10 resultado(s). Melhor: 'A Self-Correcting Agentic AI Framework for Autonomous Reasoning and Decision-Making' (Similaridade: 57.6% [BAIXA], Autoria: SEM_INTERSECAO, Ano oficial: 2026).",
+          "candidates_found": 10,
+          "best_similarity_pct": 57.56
+        },
+        {
+          "tool_name": "search_openalex_tool",
+          "arguments": {
+            "query_title": "Quantum Hyper-Dimensional Self-Correcting Transformers for Autonomous Sub-Symbolic Reasoning in Zero-Gravity Edge Networks"
+          },
+          "summary_result": "OpenAlex: 5 resultado(s). Melhor: 'The Incommensurability of Error and Nonsense: An AI Hallucination Interception and Creativity Blueprint' (Similaridade: 43.8% [BAIXA], Autoria: SEM_INTERSECAO, Ano oficial: None).",
+          "candidates_found": 5,
+          "best_similarity_pct": 43.75
+        },
+        {
+          "tool_name": "search_semantic_scholar_tool",
+          "arguments": {
+            "query_title": "Quantum Hyper-Dimensional Self-Correcting Transformers for Autonomous Sub-Symbolic Reasoning in Zero-Gravity Edge Networks"
+          },
+          "summary_result": "Semantic Scholar: Nenhum resultado retornado para 'Quantum Hyper-Dimensional Self-Correcting Transformers for Autonomous Sub-Symbolic Reasoning in Zero-Gravity Edge Networks'.",
+          "candidates_found": 0,
+          "best_similarity_pct": 0.0
+        }
+      ]
+    },
+    {
+      "indice": 3,
+      "referencia_extraida": {
+        "texto_original": "@inproceedings{chimera2017alucinada,\n  author    = {Pereira, Carlos Eduardo and Oliveira, Mariana Souza and Santos, Roberto},\n  title     = {Attention Is All You Need},\n  booktitle = {Advances in Neural Information Processing Systems},\n  year      = {2017}\n}",
+        "titulo": "Attention Is All You Need",
+        "autores": [
+          "Pereira, Carlos Eduardo",
+          "Oliveira, Mariana Souza",
+          "Santos, Roberto"
+        ],
+        "ano": 2017,
+        "veiculo": "Advances in Neural Information Processing Systems",
+        "doi": null,
+        "url": null,
+        "tipo_inferido": "conference"
+      },
+      "status_final": "ALUCINADA",
+      "categoria_taxonomia": "Referência Quimera (Mosaico de Metadados)",
+      "diagnostico_explicativo": "Referência Quimera / Atribuição Falsa de Autoria (RN03): O título 'Attention Is All You Need' existe na base OpenAlex (similaridade de 100.0%), mas pertence aos autores [Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez, Łukasz Kaiser, Illia Polosukhin] (2017), e não aos autores [Pereira, Carlos Eduardo, Oliveira, Mariana Souza, Santos, Roberto] (2017) citados no documento (0% de interseção nos sobrenomes).",
+      "acao_recomendada": "Remover a referência do artigo ou substituir por uma fonte real verificada.",
+      "melhor_correspondencia_oficial": {
+        "fonte_api": "OpenAlex",
+        "titulo_oficial": "Attention Is All You Need",
+        "autores_oficiais": [
+          "Ashish Vaswani",
+          "Noam Shazeer",
+          "Niki Parmar",
+          "Jakob Uszkoreit",
+          "Llion Jones",
+          "Aidan N. Gomez",
+          "Łukasz Kaiser",
+          "Illia Polosukhin"
+        ],
+        "ano_oficial": 2017,
+        "veiculo_oficial": "arXiv (Cornell University)",
+        "doi_oficial": "10.48550/arxiv.1706.03762",
+        "url_oficial": "http://arxiv.org/abs/1706.03762",
+        "tipo_oficial": "preprint"
+      },
+      "metricas": {
+        "doi_informado": null,
+        "doi_resolvido": false,
+        "doi_status": "NAO_INFORMADO",
+        "similaridade_titulo_pct": 100.0,
+        "faixa_similaridade_titulo": "FORTE",
+        "correspondencia_autoria": "SEM_INTERSECAO",
+        "primeiro_autor_coincide": false,
+        "intersecao_demais_autores_pct": 0.0,
+        "sobrenomes_citados": [
+          "pereira",
+          "oliveira",
+          "santos"
+        ],
+        "sobrenomes_oficiais": [
+          "vaswani",
+          "shazeer",
+          "parmar",
+          "uszkoreit",
+          "jones",
+          "gomez",
+          "kaiser",
+          "polosukhin"
+        ],
+        "sobrenomes_em_comum": [],
+        "diferenca_ano": 0,
+        "ano_aceitavel": true,
+        "excecao_escopo_rn05": false,
+        "motivo_rn05": null
+      },
+      "rastro_tools": [
+        {
+          "tool_name": "search_crossref_tool",
+          "arguments": {
+            "query_title": "Attention Is All You Need"
+          },
+          "summary_result": "Crossref: 10 resultado(s). Melhor: 'Attention Is All You Need' (Similaridade: 100.0% [FORTE], Autoria: SEM_INTERSECAO, Ano oficial: 2025).",
+          "candidates_found": 10,
+          "best_similarity_pct": 100.0
+        },
+        {
+          "tool_name": "search_openalex_tool",
+          "arguments": {
+            "query_title": "Attention Is All You Need"
+          },
+          "summary_result": "OpenAlex: 5 resultado(s). Melhor: 'Attention Is All You Need' (Similaridade: 100.0% [FORTE], Autoria: SEM_INTERSECAO, Ano oficial: 2017).",
+          "candidates_found": 5,
+          "best_similarity_pct": 100.0
+        },
+        {
+          "tool_name": "search_semantic_scholar_tool",
+          "arguments": {
+            "query_title": "Attention Is All You Need"
+          },
+          "summary_result": "Semantic Scholar: Nenhum resultado retornado para 'Attention Is All You Need'.",
+          "candidates_found": 0,
+          "best_similarity_pct": 0.0
+        }
+      ]
+    },
+    {
+      "indice": 4,
+      "referencia_extraida": {
+        "texto_original": "@article{doifake2023alucinada,\n  author    = {Machado, Henrique and Tavares, Fernanda},\n  title     = {Stochastic Meta-Gradient Alignment for Non-Euclidean Graph Hallucination Suppression},\n  journal   = {IEEE Transactions on Fictional Computing},\n  year      = {2023},\n  doi       = {10.1038/s41586-099-99999-z}\n}",
+        "titulo": "Stochastic Meta-Gradient Alignment for Non-Euclidean Graph Hallucination Suppression",
+        "autores": [
+          "Machado, Henrique",
+          "Tavares, Fernanda"
+        ],
+        "ano": 2023,
+        "veiculo": "IEEE Transactions on Fictional Computing",
+        "doi": "10.1038/s41586-099-99999-z",
+        "url": null,
+        "tipo_inferido": "article"
+      },
+      "status_final": "ALUCINADA",
+      "categoria_taxonomia": "Invenção de DOI (DOI Inexistente / 404)",
+      "diagnostico_explicativo": "Invenção de DOI e Obra Fantasma (RN01 Critério 1): O DOI citado (10.1038/s41586-099-99999-z) retornou erro '404 Not Found' nas APIs do Crossref e do doi.org (não está registrado em nenhuma agência), e a busca textual pelo título 'Stochastic Meta-Gradient Alignment for Non-Euclidean Graph Hallucination Suppression' também não encontrou correspondência válida com autoria compatível (melhor similaridade bruta: 64.8%).",
+      "acao_recomendada": "Remover a referência do artigo ou substituir por uma fonte real verificada.",
+      "melhor_correspondencia_oficial": {
+        "fonte_api": "Crossref",
+        "titulo_oficial": "ReGA: Zero-Overhead Graph Alignment for Structural Hallucination Detection Without Generation",
+        "autores_oficiais": [
+          "Valentin Noël",
+          "Elimane Yassine Seidou"
+        ],
+        "ano_oficial": 2026,
+        "veiculo_oficial": "Companion Proceedings of the ACM Web Conference 2026",
+        "doi_oficial": "10.1145/3774905.3794657",
+        "url_oficial": "https://doi.org/10.1145/3774905.3794657",
+        "tipo_oficial": "proceedings-article"
+      },
+      "metricas": {
+        "doi_informado": "10.1038/s41586-099-99999-z",
+        "doi_resolvido": false,
+        "doi_status": "INEXISTENTE_404",
+        "similaridade_titulo_pct": 64.77,
+        "faixa_similaridade_titulo": "PARCIAL",
+        "correspondencia_autoria": "SEM_INTERSECAO",
+        "primeiro_autor_coincide": false,
+        "intersecao_demais_autores_pct": 0.0,
+        "sobrenomes_citados": [
+          "machado",
+          "tavares"
+        ],
+        "sobrenomes_oficiais": [
+          "noel",
+          "seidou"
+        ],
+        "sobrenomes_em_comum": [],
+        "diferenca_ano": 3,
+        "ano_aceitavel": false,
+        "excecao_escopo_rn05": false,
+        "motivo_rn05": null
+      },
+      "rastro_tools": [
+        {
+          "tool_name": "resolve_doi_tool",
+          "arguments": {
+            "doi": "10.1038/s41586-099-99999-z"
+          },
+          "summary_result": "DOI '10.1038/s41586-099-99999-z' retornou 404 Not Found no Crossref e no doi.org (DOI Inexistente - RN01 Critério 1).",
+          "candidates_found": 0,
+          "best_similarity_pct": 0.0
+        },
+        {
+          "tool_name": "search_crossref_tool",
+          "arguments": {
+            "query_title": "Stochastic Meta-Gradient Alignment for Non-Euclidean Graph Hallucination Suppression"
+          },
+          "summary_result": "Crossref: 10 resultado(s). Melhor: 'ReGA: Zero-Overhead Graph Alignment for Structural Hallucination Detection Without Generation' (Similaridade: 64.8% [PARCIAL], Autoria: SEM_INTERSECAO, Ano oficial: 2026).",
+          "candidates_found": 10,
+          "best_similarity_pct": 64.77
+        },
+        {
+          "tool_name": "search_openalex_tool",
+          "arguments": {
+            "query_title": "Stochastic Meta-Gradient Alignment for Non-Euclidean Graph Hallucination Suppression"
+          },
+          "summary_result": "OpenAlex: 5 resultado(s). Melhor: 'Transductive meta-learning with enhanced feature ensemble for few-shot semantic segmentation' (Similaridade: 46.6% [BAIXA], Autoria: SEM_INTERSECAO, Ano oficial: 2024).",
+          "candidates_found": 5,
+          "best_similarity_pct": 46.59
+        },
+        {
+          "tool_name": "search_semantic_scholar_tool",
+          "arguments": {
+            "query_title": "Stochastic Meta-Gradient Alignment for Non-Euclidean Graph Hallucination Suppression"
+          },
+          "summary_result": "Semantic Scholar: Nenhum resultado retornado para 'Stochastic Meta-Gradient Alignment for Non-Euclidean Graph Hallucination Suppression'.",
+          "candidates_found": 0,
+          "best_similarity_pct": 0.0
+        }
+      ]
+    },
+    {
+      "indice": 5,
+      "referencia_extraida": {
+        "texto_original": "@article{doihijacked2021alucinada,\n  author    = {Ribeiro, Gustavo and Mendes, Camila},\n  title     = {Synthesizing Novel Biodegradable Polymers from Deep Marine Algae Extracts},\n  journal   = {International Journal of Marine Chemistry},\n  year      = {2021},\n  doi       = {10.1038/nature14539}\n}",
+        "titulo": "Synthesizing Novel Biodegradable Polymers from Deep Marine Algae Extracts",
+        "autores": [
+          "Ribeiro, Gustavo",
+          "Mendes, Camila"
+        ],
+        "ano": 2021,
+        "veiculo": "International Journal of Marine Chemistry",
+        "doi": "10.1038/nature14539",
+        "url": null,
+        "tipo_inferido": "article"
+      },
+      "status_final": "ALUCINADA",
+      "categoria_taxonomia": "Sequestro de DOI (DOI Cruzado / Hijacked)",
+      "diagnostico_explicativo": "Sequestro de DOI (DOI Cruzado - RN01 Critério 2): O DOI informado (10.1038/nature14539) é válido na base Crossref, porém pertence a uma obra completamente diferente: 'Deep learning' (Yann LeCun, Yoshua Bengio, Geoffrey Hinton, 2015). A similaridade entre o título citado ('Synthesizing Novel Biodegradable Polymers from Deep Marine Algae Extracts') e o título oficial vinculado ao DOI é de apenas 27.9% (< 60%).",
+      "acao_recomendada": "Remover a referência do artigo ou substituir por uma fonte real verificada.",
+      "melhor_correspondencia_oficial": {
+        "fonte_api": "Crossref",
+        "titulo_oficial": "Deep learning",
+        "autores_oficiais": [
+          "Yann LeCun",
+          "Yoshua Bengio",
+          "Geoffrey Hinton"
+        ],
+        "ano_oficial": 2015,
+        "veiculo_oficial": "Nature",
+        "doi_oficial": "10.1038/nature14539",
+        "url_oficial": "https://doi.org/10.1038/nature14539",
+        "tipo_oficial": "journal-article"
+      },
+      "metricas": {
+        "doi_informado": "10.1038/nature14539",
+        "doi_resolvido": true,
+        "doi_status": "CRUZADO_HIJACKED",
+        "similaridade_titulo_pct": 27.91,
+        "faixa_similaridade_titulo": "BAIXA",
+        "correspondencia_autoria": "SEM_INTERSECAO",
+        "primeiro_autor_coincide": false,
+        "intersecao_demais_autores_pct": 0.0,
+        "sobrenomes_citados": [
+          "ribeiro",
+          "mendes"
+        ],
+        "sobrenomes_oficiais": [
+          "lecun",
+          "bengio",
+          "hinton"
+        ],
+        "sobrenomes_em_comum": [],
+        "diferenca_ano": 6,
+        "ano_aceitavel": false,
+        "excecao_escopo_rn05": false,
+        "motivo_rn05": null
+      },
+      "rastro_tools": [
+        {
+          "tool_name": "resolve_doi_tool",
+          "arguments": {
+            "doi": "10.1038/nature14539"
+          },
+          "summary_result": "DOI '10.1038/nature14539' resolvido via Crossref. Título oficial: 'Deep learning' (Similaridade: 27.9% - BAIXA). Status DOI: CRUZADO_HIJACKED. Autoria: SEM_INTERSECAO.",
+          "candidates_found": 1,
+          "best_similarity_pct": 27.91
+        }
+      ]
+    },
+    {
+      "indice": 6,
+      "referencia_extraida": {
+        "texto_original": "@article{yeardistortion2022suspeita,\n  author    = {LeCun, Yann and Bengio, Yoshua and Hinton, Geoffrey},\n  title     = {Deep learning},\n  journal   = {Nature},\n  year      = {2022}\n}",
+        "titulo": "Deep learning",
+        "autores": [
+          "LeCun, Yann",
+          "Bengio, Yoshua",
+          "Hinton, Geoffrey"
+        ],
+        "ano": 2022,
+        "veiculo": "Nature",
+        "doi": null,
+        "url": null,
+        "tipo_inferido": "article"
+      },
+      "status_final": "SUSPEITA (Revisar)",
+      "categoria_taxonomia": "Distorção de Veículo ou Ano",
+      "diagnostico_explicativo": "Distorção Temporal (RN04): O artigo 'Deep learning' e seus autores coincidem com o registro oficial na base Crossref (similaridade de 100.0%), porém o ano citado no documento (2022) diverge em 7 anos do ano oficial de publicação (2015), excedendo a tolerância máxima de 2 anos.",
+      "acao_recomendada": "Verificar manualmente o trecho extraído ou corrigir pequenos erros de metadados.",
+      "melhor_correspondencia_oficial": {
+        "fonte_api": "Crossref",
+        "titulo_oficial": "Deep learning",
+        "autores_oficiais": [
+          "Yann LeCun",
+          "Yoshua Bengio",
+          "Geoffrey Hinton"
+        ],
+        "ano_oficial": 2015,
+        "veiculo_oficial": "Nature",
+        "doi_oficial": "10.1038/nature14539",
+        "url_oficial": "https://doi.org/10.1038/nature14539",
+        "tipo_oficial": "journal-article"
+      },
+      "metricas": {
+        "doi_informado": null,
+        "doi_resolvido": false,
+        "doi_status": "NAO_INFORMADO",
+        "similaridade_titulo_pct": 100.0,
+        "faixa_similaridade_titulo": "FORTE",
+        "correspondencia_autoria": "ALTA",
+        "primeiro_autor_coincide": true,
+        "intersecao_demais_autores_pct": 100.0,
+        "sobrenomes_citados": [
+          "lecun",
+          "bengio",
+          "hinton"
+        ],
+        "sobrenomes_oficiais": [
+          "lecun",
+          "bengio",
+          "hinton"
+        ],
+        "sobrenomes_em_comum": [
+          "lecun",
+          "bengio",
+          "hinton"
+        ],
+        "diferenca_ano": 7,
+        "ano_aceitavel": false,
+        "excecao_escopo_rn05": false,
+        "motivo_rn05": null
+      },
+      "rastro_tools": [
+        {
+          "tool_name": "search_crossref_tool",
+          "arguments": {
+            "query_title": "Deep learning"
+          },
+          "summary_result": "Crossref: 10 resultado(s). Melhor: 'Deep learning' (Similaridade: 100.0% [FORTE], Autoria: ALTA, Ano oficial: 2015).",
+          "candidates_found": 10,
+          "best_similarity_pct": 100.0
+        }
+      ]
+    },
+    {
+      "indice": 7,
+      "referencia_extraida": {
+        "texto_original": "@techreport{abnt2011rn05,\n  author      = {{Associação Brasileira de Normas Técnicas}},\n  title       = {ABNT NBR 14724: Informação e documentação — Trabalhos acadêmicos — Apresentação},\n  institution = {ABNT},\n  year        = {2011}\n}",
+        "titulo": "ABNT NBR 14724: Informação e documentação — Trabalhos acadêmicos — Apresentação",
+        "autores": [
+          "Associação Brasileira de Normas Técnicas"
+        ],
+        "ano": 2011,
+        "veiculo": "ABNT",
+        "doi": null,
+        "url": null,
+        "tipo_inferido": "standard"
+      },
+      "status_final": "SUSPEITA (Revisar)",
+      "categoria_taxonomia": "Não Verificável Automaticamente (Revisão Manual - RN05)",
+      "diagnostico_explicativo": "Exceção de Escopo (RN05 — Norma técnica (ISO/ABNT/NBR/IEEE) — RN05): A referência 'ABNT NBR 14724: Informação e documentação — Trabalhos acadêmicos — Apresentação' não foi localizada nas APIs indexadas de artigos científicos (Crossref, OpenAlex e Semantic Scholar), mas apresenta características de literatura cinzenta, norma técnica, legislação, livro local ou página web. Classificada como Não Verificável Automaticamente para revisão manual.",
+      "acao_recomendada": "Verificar manualmente o trecho extraído ou corrigir pequenos erros de metadados.",
+      "melhor_correspondencia_oficial": {
+        "fonte_api": "OpenAlex",
+        "titulo_oficial": "Apresentação de trabalhos acadêmicos conforme as normas da ABNT",
+        "autores_oficiais": [
+          "Helen Rose Flores de Flores",
+          "Romilda Aparecida Teofano"
+        ],
+        "ano_oficial": 2007,
+        "veiculo_oficial": "Lume (Universidade Federal do Rio Grande do Sul)",
+        "doi_oficial": null,
+        "url_oficial": "http://hdl.handle.net/10183/135255",
+        "tipo_oficial": "article"
+      },
+      "metricas": {
+        "doi_informado": null,
+        "doi_resolvido": false,
+        "doi_status": "NAO_INFORMADO",
+        "similaridade_titulo_pct": 74.45,
+        "faixa_similaridade_titulo": "PARCIAL",
+        "correspondencia_autoria": "SEM_INTERSECAO",
+        "primeiro_autor_coincide": false,
+        "intersecao_demais_autores_pct": 0.0,
+        "sobrenomes_citados": [
+          "tecnicas"
+        ],
+        "sobrenomes_oficiais": [
+          "flores",
+          "teofano"
+        ],
+        "sobrenomes_em_comum": [],
+        "diferenca_ano": 4,
+        "ano_aceitavel": false,
+        "excecao_escopo_rn05": true,
+        "motivo_rn05": "Norma técnica (ISO/ABNT/NBR/IEEE) — RN05"
+      },
+      "rastro_tools": [
+        {
+          "tool_name": "search_crossref_tool",
+          "arguments": {
+            "query_title": "ABNT NBR 14724: Informação e documentação — Trabalhos acadêmicos — Apresentação"
+          },
+          "summary_result": "Crossref: 5 resultado(s). Melhor: 'Estrutura e formatação de trabalhos acadêmicos: compilação e discussão das normas ABNT' (Similaridade: 64.2% [PARCIAL], Autoria: SEM_INTERSECAO, Ano oficial: 2019).",
+          "candidates_found": 5,
+          "best_similarity_pct": 64.15
+        },
+        {
+          "tool_name": "search_openalex_tool",
+          "arguments": {
+            "query_title": "ABNT NBR 14724: Informação e documentação — Trabalhos acadêmicos — Apresentação"
+          },
+          "summary_result": "OpenAlex: 5 resultado(s). Melhor: 'Apresentação de trabalhos acadêmicos conforme as normas da ABNT' (Similaridade: 74.5% [PARCIAL], Autoria: SEM_INTERSECAO, Ano oficial: 2007).",
+          "candidates_found": 5,
+          "best_similarity_pct": 74.45
+        },
+        {
+          "tool_name": "search_semantic_scholar_tool",
+          "arguments": {
+            "query_title": "ABNT NBR 14724: Informação e documentação — Trabalhos acadêmicos — Apresentação"
+          },
+          "summary_result": "Semantic Scholar: Nenhum resultado retornado para 'ABNT NBR 14724: Informação e documentação — Trabalhos acadêmicos — Apresentação'.",
+          "candidates_found": 0,
+          "best_similarity_pct": 0.0
+        }
+      ]
+    },
+    {
+      "indice": 8,
+      "referencia_extraida": {
+        "texto_original": "@misc{ufcportal2025rn05,\n  author       = {{Universidade Federal do Ceará}},\n  title        = {Portal Institucional de Pesquisa e Inovação da UFC (PIBITI)},\n  howpublished = {Disponível em: https://www.ufc.br},\n  url          = {https://www.ufc.br},\n  year         = {2025}\n}",
+        "titulo": "Portal Institucional de Pesquisa e Inovação da UFC (PIBITI)",
+        "autores": [
+          "Universidade Federal do Ceará"
+        ],
+        "ano": 2025,
+        "veiculo": "Disponível em: https://www.ufc.br",
+        "doi": null,
+        "url": "https://www.ufc.br",
+        "tipo_inferido": "webpage"
+      },
+      "status_final": "SUSPEITA (Revisar)",
+      "categoria_taxonomia": "Não Verificável Automaticamente (Revisão Manual - RN05)",
+      "diagnostico_explicativo": "Exceção de Escopo (RN05 — Página web / recurso online (@misc / URL) — RN05): A referência 'Portal Institucional de Pesquisa e Inovação da UFC (PIBITI)' não foi localizada nas APIs indexadas de artigos científicos (Crossref, OpenAlex e Semantic Scholar), mas apresenta características de literatura cinzenta, norma técnica, legislação, livro local ou página web. Classificada como Não Verificável Automaticamente para revisão manual.",
+      "acao_recomendada": "Verificar manualmente o trecho extraído ou corrigir pequenos erros de metadados.",
+      "melhor_correspondencia_oficial": {
+        "fonte_api": "Crossref",
+        "titulo_oficial": "Tendencias de reorganização institucional da pesquisa agricola",
+        "autores_oficiais": [
+          "Debora Luz de Mello"
+        ],
+        "ano_oficial": 2021,
+        "veiculo_oficial": "Universidade Estadual de Campinas",
+        "doi_oficial": "10.47749/t/unicamp.1995.83982",
+        "url_oficial": "https://doi.org/10.47749/t/unicamp.1995.83982",
+        "tipo_oficial": "dissertation"
+      },
+      "metricas": {
+        "doi_informado": null,
+        "doi_resolvido": false,
+        "doi_status": "NAO_INFORMADO",
+        "similaridade_titulo_pct": 57.14,
+        "faixa_similaridade_titulo": "BAIXA",
+        "correspondencia_autoria": "SEM_INTERSECAO",
+        "primeiro_autor_coincide": false,
+        "intersecao_demais_autores_pct": 0.0,
+        "sobrenomes_citados": [
+          "ceara"
+        ],
+        "sobrenomes_oficiais": [
+          "mello"
+        ],
+        "sobrenomes_em_comum": [],
+        "diferenca_ano": 4,
+        "ano_aceitavel": false,
+        "excecao_escopo_rn05": true,
+        "motivo_rn05": "Página web / recurso online (@misc / URL) — RN05"
+      },
+      "rastro_tools": [
+        {
+          "tool_name": "search_crossref_tool",
+          "arguments": {
+            "query_title": "Portal Institucional de Pesquisa e Inovação da UFC (PIBITI)"
+          },
+          "summary_result": "Crossref: 10 resultado(s). Melhor: 'Tendencias de reorganização institucional da pesquisa agricola' (Similaridade: 57.1% [BAIXA], Autoria: SEM_INTERSECAO, Ano oficial: 2021).",
+          "candidates_found": 10,
+          "best_similarity_pct": 57.14
+        },
+        {
+          "tool_name": "search_openalex_tool",
+          "arguments": {
+            "query_title": "Portal Institucional de Pesquisa e Inovação da UFC (PIBITI)"
+          },
+          "summary_result": "OpenAlex: 5 resultado(s). Melhor: 'Ações de ensino, pesquisa e extensão direcionadas a pessoas privadas de liberdade em instituições federais de educação superior' (Similaridade: 44.8% [BAIXA], Autoria: SEM_INTERSECAO, Ano oficial: 2024).",
+          "candidates_found": 5,
+          "best_similarity_pct": 44.81
+        },
+        {
+          "tool_name": "search_semantic_scholar_tool",
+          "arguments": {
+            "query_title": "Portal Institucional de Pesquisa e Inovação da UFC (PIBITI)"
+          },
+          "summary_result": "Semantic Scholar: Nenhum resultado retornado para 'Portal Institucional de Pesquisa e Inovação da UFC (PIBITI)'.",
+          "candidates_found": 0,
+          "best_similarity_pct": 0.0
+        }
+      ]
+    }
+  ]
+}

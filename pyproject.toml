@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aluc"
+version = "1.0.0"
+description = "Agente de IA para Auditoria e Detecção de Alucinações Bibliográficas"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "google-genai>=2.30.1",
+    "pydantic>=2.7.0",
+    "httpx>=0.27.0",
+    "rapidfuzz>=3.9.0",
+    "pypdf>=4.2.0",
+    "bibtexparser>=1.4.1",
+    "fpdf2>=2.7.9",
+    "streamlit>=1.36.0",
+    "rich>=13.7.0",
+    "python-dotenv>=1.0.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
