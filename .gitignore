@@ -1,1 +1,24 @@
+# Variáveis de ambiente
 .env
+
+# Byte-compiled / cache do Python
+__pycache__/
+*.py[codz]
+*$py.class
+
+# Ambientes virtuais
+.venv/
+venv/
+env/
+
+# Caches de testes e ferramentas
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Empacotamento e build
+build/
+dist/
+*.egg-info/
