@@ -76,6 +76,7 @@ class HallucinationCategory(str, Enum):
     """Taxonomia de Alucinações Bibliográficas (Seção 2 e RN05)."""
 
     NONE = "Nenhuma (Referência Íntegra)"
+    CONSULTA_INCONCLUSIVA = "Consulta incompleta (Revisão Manual)"
     GHOST_REFERENCE = "Invenção Total (Ghost Reference)"
     CHIMERA = "Referência Quimera (Mosaico de Metadados)"
     DOI_FABRICATION = "Invenção de DOI (DOI Inexistente / 404)"
@@ -146,6 +147,20 @@ class AgentFinalJudgment(BaseModel):
     )
 
 
+class VerifiedCorrection(BaseModel):
+    registro: OfficialWorkMetadata
+    bibtex: str
+
+    @property
+    def citation(self) -> str:
+        work = self.registro
+        parts = [", ".join(work.autores_oficiais), str(work.ano_oficial or ""),
+                 work.titulo_oficial, work.veiculo_oficial]
+        citation = ". ".join(part for part in parts if part)
+        url = f"https://doi.org/{work.doi_oficial}" if work.doi_oficial else work.url_oficial
+        return f"{citation} ({work.fonte_api})" + (f" · {url}" if url else "")
+
+
 class ReferenceAuditResult(BaseModel):
     """Resultado consolidado da auditoria de uma única referência bibliográfica."""
 
@@ -158,6 +173,9 @@ class ReferenceAuditResult(BaseModel):
     melhor_correspondencia_oficial: Optional[OfficialWorkMetadata] = None
     metricas: ComparisonMetrics = Field(default_factory=ComparisonMetrics)
     rastro_tools: List[ToolCallTrace] = Field(default_factory=list)
+    falhas_consulta: List[str] = Field(default_factory=list)
+    estado_investigacao: Optional[str] = None
+    correcao_verificada: Optional[VerifiedCorrection] = None
 
 
 class AuditReport(BaseModel):
@@ -175,6 +193,16 @@ class AuditReport(BaseModel):
     total_suspeito: int = 0
     total_alucinado: int = 0
     resultados: List[ReferenceAuditResult] = Field(default_factory=list)
+    chamadas_gemini_extracao: int = 0
+    chamadas_gemini_investigacao: int = 0
+    avisos: List[str] = Field(default_factory=list)
+
+    @property
+    def gemini_summary(self) -> str:
+        return (
+            f"Chamadas ao Gemini · extração: {self.chamadas_gemini_extracao} · "
+            f"investigação: {self.chamadas_gemini_investigacao}"
+        )
 
     def recompute_totals(self) -> None:
         """Recalcula os contadores do resumo quantitativo a partir da lista de resultados."""

@@ -75,7 +75,7 @@ class CrossrefClient:
         """
         clean_doi = raw_doi.strip()
         clean_doi = re.sub(r"^https?://(?:dx\.)?doi\.org/", "", clean_doi, flags=re.I)
-        encoded_doi = quote(clean_doi, safe="")
+        encoded_doi = quote(clean_doi.lower(), safe="")
 
         url = f"{self.BASE_URL}/{encoded_doi}"
         status, data = self.http.get_json(url)
@@ -89,7 +89,7 @@ class CrossrefClient:
         if h_status == 404 or (h_data and h_data.get("responseCode") == 100):
             return "INEXISTENTE_404", None
 
-        if status == 404:
+        if h_status == 200 and h_data and h_data.get("responseCode") == 1:
             return "REGISTRADO_OUTRA_AGENCIA", None
 
         return "ERRO_CONEXAO", None

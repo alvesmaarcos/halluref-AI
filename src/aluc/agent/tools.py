@@ -212,7 +212,7 @@ class ReferenceAuditToolkit:
 
     def resolve_doi_tool(self, doi: str) -> Dict[str, Any]:
         """Executa RN01: Resolução direta de DOI no Crossref, doi.org e OpenAlex."""
-        target_doi = (doi or self.reference.doi or "").strip()
+        target_doi = (doi or self.reference.doi or "").strip().lower()
         status, work = self.crossref.resolve_doi(target_doi)
 
         # Se estiver registrado em outra agência (ex: DataCite / arXiv), tenta resolver via OpenAlex
@@ -260,13 +260,14 @@ class ReferenceAuditToolkit:
                 },
             }
 
-        # Caso 404 Not Found no Crossref e doi.org (RN01 Critério 1)
-        self.doi_resolution_status = "INEXISTENTE_404"
+        self.doi_resolution_status = status
         metrics = self._update_best_state(None)
         verdict, category, action = evaluate_decision_matrix(metrics)
         summary = (
             f"DOI '{target_doi}' retornou 404 Not Found no Crossref e no doi.org (DOI Inexistente - RN01 Critério 1)."
         )
+        if status != "INEXISTENTE_404":
+            summary = f"Não foi possível confirmar o DOI '{target_doi}' ({status})."
         self.traces.append(
             ToolCallTrace(
                 tool_name="resolve_doi_tool",
@@ -277,8 +278,8 @@ class ReferenceAuditToolkit:
             )
         )
         return {
-            "status": "DOI_404_NOT_FOUND",
-            "doi_status": "INEXISTENTE_404",
+            "status": "DOI_404_NOT_FOUND" if status == "INEXISTENTE_404" else "DOI_UNCONFIRMED",
+            "doi_status": status,
             "message": summary,
             "metrics": metrics.model_dump(),
             "matrix_recommendation": {

@@ -28,6 +28,9 @@ def export_report_to_markdown(
         f"- **Arquivo Analisado:** `{report.arquivo_origem}` ({report.formato_origem})",
         f"- **Data/Hora da Auditoria:** `{report.data_hora_iso}`",
         "",
+        f"- {report.gemini_summary}",
+        *(f"- {warning}" for warning in report.avisos),
+        "",
         "## 1. Resumo Quantitativo",
         "",
         "| Métrica | Quantidade | Percentual |",
@@ -99,6 +102,19 @@ def export_report_to_markdown(
                 f"Exceção de Escopo = `{'Sim (' + (m.motivo_rn05 or '') + ')' if m.excecao_escopo_rn05 else 'Não'}`",
             ]
         )
+
+        if res.falhas_consulta:
+            lines.append(f"- **Falhas de consulta:** {', '.join(res.falhas_consulta)}")
+        if res.estado_investigacao:
+            lines.append(f"- **Investigação:** {res.estado_investigacao}")
+        if res.correcao_verificada:
+            lines.extend([
+                f"- **Correção:** {res.correcao_verificada.citation}",
+                "",
+                "```bibtex",
+                res.correcao_verificada.bibtex,
+                "```",
+            ])
 
         if res.rastro_tools:
             lines.append("- **Rastro de Consultas do Agente (Tools):**")

@@ -4,13 +4,11 @@ Sistema de auditoria automatizada de referências bibliográficas em documentos 
 
 ## Funcionalidades Principais
 
-- **Isolamento com Privacidade de Manuscrito (RF01, RF02, RNF02):** Extrai apenas a seção final de referências de arquivos PDF e LaTeX (`.tex`), além de arquivos BibTeX (`.bib`), garantindo que o texto principal do artigo não seja enviado a APIs de terceiros.
-- **Parser Semântico via Gemini Flash (RF03, RNF03):** Estrutura referências brutas em JSON padronizado usando `gemini-3.8-flash` (SDK `google-genai`) com configuração determinística (`seed=0`).
-- **Agente Auditor com Tool-Calling em Cascata (RF04):** Orquestra consultas encadeadas em bases científicas abertas e gratuitas:
-  1. Resolução direta de DOI (**Crossref / doi.org** — **RN01**)
-  2. **Crossref API** (busca bibliográfica primária)
-  3. **OpenAlex API** (segunda opinião)
-  4. **Semantic Scholar API** (terceira opinião com alta cobertura em Computação/arXiv)
+- **OCR local no Windows:** PDFs digitalizados podem ser lidos pelo reconhecimento de texto do Windows usando um idioma de OCR instalado no perfil.
+- **Extração local:** Identifica a bibliografia em PDF e LaTeX e interpreta BibTeX diretamente. Se necessário, usa uma chamada opcional ao Gemini para estruturar um bloco bibliográfico identificado.
+- **Auditoria em Python:** Resolve DOIs e consulta Crossref, OpenAlex e Semantic Scholar em cascata. A matriz de decisão classifica cada referência a partir dos metadados encontrados.
+- **Investigação em lote:** Usa até duas chamadas opcionais ao Gemini para planejar buscas e avaliar candidatos. O Python verifica as correções sugeridas e registra a fonte e o BibTeX no relatório.
+- **Progresso:** A interface web e a CLI exibem a etapa atual, incluindo a espera por serviços externos. O relatório registra as chamadas ao Gemini por etapa, com limite de três por documento.
 - **Detecção da Taxonomia Completa de Alucinações (RN01–RN05):**
   - *Invenção Total (Ghost Reference)*
   - *Referência Quimera (Mosaico de Metadados / Atribuição Falsa de Autoria)*
@@ -28,7 +26,7 @@ python -m venv .venv
 ```
 
 ### 2. Configurar variáveis de ambiente
-Copie `.env.example` para `.env` e informe sua `GEMINI_API_KEY` (Google AI Studio):
+Para ativar a assistência do Gemini, copie `.env.example` para `.env` e informe sua `GEMINI_API_KEY` (Google AI Studio). A auditoria em Python também funciona sem essa configuração.
 ```powershell
 Copy-Item .env.example .env
 ```

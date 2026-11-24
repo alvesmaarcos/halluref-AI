@@ -21,7 +21,7 @@ from aluc.exporters import (
     export_report_to_markdown,
     export_report_to_pdf,
 )
-from aluc.schemas import AuditReport, VerdictStatus
+from aluc.schemas import VerdictStatus
 
 st.set_page_config(
     page_title="ALUC — Auditoria de Alucinações Bibliográficas",
@@ -31,8 +31,8 @@ st.set_page_config(
 
 st.title("🔍 ALUC — Agente de IA para Auditoria e Detecção de Alucinações Bibliográficas")
 st.markdown(
-    "Validação automatizada de citações acadêmicas (`.pdf`, `.bib`, `.tex`) via **Gemini 3.8 Flash (Tool-Calling)** "
-    "em cascata nas bases **Crossref**, **OpenAlex** e **Semantic Scholar**."
+    "Validação de citações acadêmicas em Crossref, OpenAlex e Semantic Scholar, "
+    "com investigação opcional em lote pelo Gemini."
 )
 
 # Barra lateral de configurações
@@ -44,7 +44,7 @@ with st.sidebar:
         "GEMINI_API_KEY (Google AI Studio)",
         value=env_cfg.gemini_api_key,
         type="password",
-        help="Chave do Google AI Studio para o parser semântico e agente Tool-Calling.",
+        help="Chave opcional para extração assistida e investigação em lote. Até três chamadas por documento.",
     )
     model_input = st.selectbox(
         "Modelo Gemini (Interactions API)",
@@ -56,9 +56,9 @@ with st.sidebar:
     st.markdown("### 📋 Critérios de Auditoria Ativos")
     st.caption(
         "- **Validação de DOI:** Resolução prioritária de DOI (detecção de erro 404 e DOI cruzado)\n"
-        "- **Similaridade de Título:** $\ge 85\%$ Forte | $60\text{--}84\%$ Parcial | $<60\%$ Ausente\n"
+        "- **Similaridade de Título:** ≥ 85% forte, de 60% a menos de 85% parcial e abaixo de 60% ausente\n"
         "- **Interseção de Autoria:** Validação dos sobrenomes dos autores (anti-quimera)\n"
-        "- **Tolerância Temporal:** Diferença aceitável de até $\pm 2$ anos\n"
+        "- **Tolerância Temporal:** Diferença aceitável de até dois anos\n"
         "- **Exceções de Escopo:** Normas técnicas (ABNT/ISO), leis, URLs e literatura cinzenta\n"
         "- **Privacidade do Manuscrito:** Isolamento local da seção de referências"
     )
@@ -90,11 +90,6 @@ if load_sample:
 
 if uploaded_file is not None:
     st.session_state["demo_mode"] = False
-    tmp_dir = Path(tempfile.gettempdir()) / "aluc_uploads"
-    tmp_dir.mkdir(parents=True, exist_ok=True)
-    target_path = tmp_dir / uploaded_file.name
-    target_path.write_bytes(uploaded_file.getvalue())
-    display_filename = uploaded_file.name
 elif st.session_state.get("demo_mode"):
     sample_bib = ROOT_DIR / "tests" / "fixtures" / "sample_references.bib"
     if sample_bib.exists():
@@ -102,32 +97,48 @@ elif st.session_state.get("demo_mode"):
         display_filename = sample_bib.name
         st.info(f"Arquivo de demonstração carregado: `{display_filename}`")
 
-if target_path is not None:
+if uploaded_file is not None or target_path is not None:
     run_audit = st.button("🚀 Executar Auditoria Bibliográfica", type="primary")
 
     if run_audit:
-        cfg = AlucConfig.from_env(
-            api_key_override=api_key_input,
-            model_override=model_input,
-        )
-        agent = BibliographicAuditorAgent(config=cfg)
-
-        progress_bar = st.progress(0, text="Isolando seção de referências...")
-        status_box = st.empty()
+        status = st.status("Iniciando auditoria…", state="running")
 
         def _on_progress(current: int, total: int, message: str) -> None:
-            pct = int((current / max(1, total)) * 100)
-            progress_bar.progress(pct, text=message)
-            status_box.caption(message)
+            status.update(label=message)
 
-        report = agent.audit_file(target_path, progress_callback=_on_progress)
-        progress_bar.progress(100, text="Auditoria concluída com sucesso!")
-        status_box.empty()
-        st.session_state["last_report"] = report
+        try:
+            cfg = AlucConfig.from_env(
+                api_key_override=api_key_input,
+                model_override=model_input,
+            )
+            agent = BibliographicAuditorAgent(config=cfg)
+            if uploaded_file is not None:
+                status.update(label="Preparando o arquivo recebido…")
+                with tempfile.TemporaryDirectory(prefix="aluc-") as tmp_dir:
+                    staged_file = Path(tmp_dir) / Path(uploaded_file.name).name
+                    staged_file.write_bytes(uploaded_file.getvalue())
+                    report = agent.audit_file(staged_file, progress_callback=_on_progress)
+            else:
+                report = agent.audit_file(target_path, progress_callback=_on_progress)
+            status.update(label="Preparando relatórios para download…")
+            downloads = (
+                export_report_to_markdown(report),
+                export_report_to_json(report),
+                export_report_to_pdf(report),
+            )
+        except Exception as exc:
+            status.update(label="A auditoria não pôde ser concluída.", state="error")
+            st.error(str(exc))
+        else:
+            st.session_state["last_run"] = (report, downloads)
+            status.update(label="Auditoria concluída", state="complete")
 
-report: AuditReport | None = st.session_state.get("last_report")
+last_run = st.session_state.get("last_run")
 
-if report is not None:
+if last_run is not None:
+    report, (md_str, json_str, pdf_bytes) = last_run
+    for warning in report.avisos:
+        st.warning(warning)
     st.divider()
 
     # Pré-visualização de Privacidade
@@ -145,12 +156,10 @@ if report is not None:
     m2.metric("✅ Válidas", report.total_valido)
     m3.metric("⚠️ Suspeitas (Revisar)", report.total_suspeito)
     m4.metric("🚨 Alucinadas", report.total_alucinado)
+    st.caption(report.gemini_summary)
 
     # Botões de Exportação
     st.subheader("📥 Exportar Relatório de Diagnóstico")
-    md_str = export_report_to_markdown(report)
-    json_str = export_report_to_json(report)
-    pdf_bytes = export_report_to_pdf(report)
 
     dl1, dl2, dl3 = st.columns(3)
     stem = Path(report.arquivo_origem).stem
@@ -180,45 +189,61 @@ if report is not None:
         )
 
     st.divider()
-    st.subheader("🔎 Detalhamento e Diagnóstico Explicativo por Referência")
+    st.subheader("Referências encontradas")
 
+    statuses = [status.value for status in VerdictStatus]
     status_filter = st.multiselect(
-        "Filtrar por Veredito:",
-        options=[
-            VerdictStatus.VALIDA.value,
-            VerdictStatus.SUSPEITA.value,
-            VerdictStatus.ALUCINADA.value,
-        ],
-        default=[
-            VerdictStatus.VALIDA.value,
-            VerdictStatus.SUSPEITA.value,
-            VerdictStatus.ALUCINADA.value,
-        ],
+        "Filtrar por veredito",
+        options=statuses,
+        default=statuses,
     )
+    visible_results = [
+        result for result in report.resultados if result.status_final.value in status_filter
+    ]
 
-    for res in report.resultados:
-        if res.status_final.value not in status_filter:
-            continue
+    if visible_results:
+        st.caption("Clique em uma referência para ver o diagnóstico.")
+        selected_statuses = ",".join(status for status in statuses if status in status_filter)
+        selection = st.dataframe(
+            [
+                {
+                    "Nº": result.indice,
+                    "Referência": result.referencia_extraida.titulo
+                    or result.referencia_extraida.texto_original
+                    or "Sem título",
+                    "Status": result.status_final.value,
+                }
+                for result in visible_results
+            ],
+            key=f"referencias:{report.data_hora_iso}:{selected_statuses}",
+            hide_index=True,
+            use_container_width=True,
+            on_select="rerun",
+            selection_mode="single-row",
+            column_config={
+                "Nº": st.column_config.NumberColumn(width="small"),
+                "Referência": st.column_config.TextColumn(width="large"),
+                "Status": st.column_config.TextColumn(width="medium"),
+            },
+        ).selection.rows
+        if selection and 0 <= selection[0] < len(visible_results):
+            res = visible_results[selection[0]]
+            ref = res.referencia_extraida
+            m = res.metricas
+            off = res.melhor_correspondencia_oficial
 
-        ref = res.referencia_extraida
-        m = res.metricas
-        off = res.melhor_correspondencia_oficial
-
-        if res.status_final == VerdictStatus.VALIDA:
-            icon = "✅"
-        elif res.status_final == VerdictStatus.SUSPEITA:
-            icon = "⚠️"
-        else:
-            icon = "🚨"
-
-        header = (
-            f"{icon} [{res.indice}] {res.status_final.value} — "
-            f"{ref.titulo or 'Sem título'} ({ref.ano or 's/d'})"
-        )
-        with st.expander(header, expanded=(res.status_final != VerdictStatus.VALIDA)):
+            st.subheader(f"Referência {res.indice} · {res.status_final.value}")
             st.markdown(f"**Categoria na Taxonomia:** `{res.categoria_taxonomia.value}`")
             st.markdown(f"**Diagnóstico Explicativo:** {res.diagnostico_explicativo}")
             st.markdown(f"**Ação Recomendada:** *{res.acao_recomendada}*")
+
+            if res.falhas_consulta:
+                st.caption("Falhas de consulta · " + ", ".join(res.falhas_consulta))
+            if res.estado_investigacao:
+                st.write(res.estado_investigacao)
+            if res.correcao_verificada:
+                st.write(res.correcao_verificada.citation)
+                st.code(res.correcao_verificada.bibtex, language="bibtex")
 
             c1, c2 = st.columns(2)
             with c1:
@@ -261,3 +286,7 @@ if report is not None:
                 st.markdown("**🛠️ Rastro de Execução de Tools do Agente:**")
                 for trace in res.rastro_tools:
                     st.code(f"[{trace.tool_name}] -> {trace.summary_result}", language="text")
+    elif report.resultados:
+        st.info("Nenhuma referência corresponde aos filtros selecionados.")
+    else:
+        st.info("Nenhuma referência disponível para exibir.")

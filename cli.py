@@ -79,9 +79,17 @@ def main(argv: list[str] | None = None) -> int:
         )
 
         def _cli_progress(current: int, total: int, msg: str) -> None:
-            console.print(f"[dim]({current}/{total})[/dim] {msg}")
+            console.print(msg, markup=False)
 
-        report = agent.audit_file(input_path, progress_callback=_cli_progress)
+        try:
+            report = agent.audit_file(input_path, progress_callback=_cli_progress)
+        except Exception as exc:
+            console.print(f"Auditoria interrompida. {exc}", markup=False)
+            return 1
+
+        for warning in report.avisos:
+            console.print(warning, style="yellow", markup=False)
+        console.print(report.gemini_summary)
 
         # Exibe tabela de resumo quantitativo
         summary_table = Table(title="Resumo Quantitativo")
@@ -123,25 +131,40 @@ def main(argv: list[str] | None = None) -> int:
                 res.categoria_taxonomia.value,
             )
         console.print(detail_table)
+        for res in report.resultados:
+            if res.falhas_consulta:
+                console.print(f"Referência {res.indice} · Falhas de consulta: {', '.join(res.falhas_consulta)}")
+            if res.estado_investigacao:
+                console.print(f"Referência {res.indice} · {res.estado_investigacao}")
+            if res.correcao_verificada:
+                console.print(res.correcao_verificada.citation, markup=False, highlight=False)
+                console.print(res.correcao_verificada.bibtex, markup=False, highlight=False)
 
         # Salva relatórios conforme formato solicitado
-        out_dir = Path(args.output_dir)
-        out_dir.mkdir(parents=True, exist_ok=True)
-        stem = input_path.stem
+        try:
+            out_dir = Path(args.output_dir)
+            out_dir.mkdir(parents=True, exist_ok=True)
+            stem = input_path.stem
 
-        saved_files: list[Path] = []
-        if args.format in {"md", "all"}:
-            md_path = out_dir / f"relatorio_{stem}.md"
-            export_report_to_markdown(report, md_path)
-            saved_files.append(md_path)
-        if args.format in {"json", "all"}:
-            json_path = out_dir / f"relatorio_{stem}.json"
-            export_report_to_json(report, json_path)
-            saved_files.append(json_path)
-        if args.format in {"pdf", "all"}:
-            pdf_path = out_dir / f"relatorio_{stem}.pdf"
-            export_report_to_pdf(report, pdf_path)
-            saved_files.append(pdf_path)
+            saved_files: list[Path] = []
+            if args.format in {"md", "all"}:
+                console.print("Gerando relatório MD…")
+                md_path = out_dir / f"relatorio_{stem}.md"
+                export_report_to_markdown(report, md_path)
+                saved_files.append(md_path)
+            if args.format in {"json", "all"}:
+                console.print("Gerando relatório JSON…")
+                json_path = out_dir / f"relatorio_{stem}.json"
+                export_report_to_json(report, json_path)
+                saved_files.append(json_path)
+            if args.format in {"pdf", "all"}:
+                console.print("Gerando relatório PDF…")
+                pdf_path = out_dir / f"relatorio_{stem}.pdf"
+                export_report_to_pdf(report, pdf_path)
+                saved_files.append(pdf_path)
+        except Exception as exc:
+            console.print(f"Falha ao gerar os relatórios. {exc}", markup=False)
+            return 1
 
         console.print("\n[bold green]Relatórios exportados com sucesso:[/bold green]")
         for p in saved_files:

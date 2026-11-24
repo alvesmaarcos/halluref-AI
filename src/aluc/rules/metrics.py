@@ -467,6 +467,13 @@ def evaluate_decision_matrix(
             "Verificar manualmente a lista de autores (divergência no primeiro autor ou omissão de coautores).",
         )
 
+    if metrics.doi_informado and not metrics.doi_resolvido:
+        return (
+            VerdictStatus.SUSPEITA,
+            HallucinationCategory.CONSULTA_INCONCLUSIVA,
+            "Não foi possível confirmar o DOI. Repita a consulta ou verifique o registro manualmente.",
+        )
+
     # 10. Condição de VÁLIDA: Título >= 85% E Autoria ALTA E (DOI válido ou ausente) E diferença de ano <= 2
     return (
         VerdictStatus.VALIDA,

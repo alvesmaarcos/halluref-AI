@@ -1,17 +1,17 @@
-"""Agente Auditor de Referências Bibliográficas com Tool-Calling via Gemini 3.8 Flash (RF04, RF05, RNF03)."""
+"""Auditoria bibliográfica local e investigação opcional em lote."""
 
 from __future__ import annotations
 
 from datetime import datetime, timezone
-import json
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Callable, List, Optional
 from google import genai
 
-from aluc.agent.parser_agent import SemanticReferenceParser
-from aluc.agent.tools import AGENT_TOOL_DECLARATIONS, ReferenceAuditToolkit
+from aluc.agent.investigation import investigate_references
+from aluc.agent.parser_agent import SemanticReferenceParser, expected_numbered_references
+from aluc.agent.tools import ReferenceAuditToolkit
 from aluc.clients.crossref import CrossrefClient
-from aluc.clients.http_client import PoliteHttpClient
+from aluc.clients.http_client import PoliteHttpClient, observe_requests
 from aluc.clients.openalex import OpenAlexClient
 from aluc.clients.semantic_scholar import SemanticScholarClient
 from aluc.config import AlucConfig
@@ -26,61 +26,6 @@ from aluc.schemas import (
     ReferenceAuditResult,
     VerdictStatus,
 )
-
-AUDITOR_SYSTEM_INSTRUCTION = """Você é um Agente de IA Auditor de Referências Bibliográficas (Versão 1.0).
-Sua missão é verificar a veracidade de cada citação acadêmica consultando obrigatoriamente as tools científicas
-em cascata e aplicando as Regras de Negócio (RN01 a RN05) e a Matriz de Decisão.
-
-FLUXO OBRIGATÓRIO DE CHAMADA DE TOOLS (RF04 e RN01):
-1. Se a referência possuir um `doi` preenchido, chame PRIMEIRO `resolve_doi_tool(doi=...)` (RN01).
-   - Se o DOI resolver e a similaridade do título for < 60%, trata-se de DOI Cruzado (Hijacked) -> ALUCINADA.
-   - Se o DOI retornar 404 (DOI Inexistente), chame também as tools de busca por título para verificar se a obra existe sem aquele DOI.
-2. Caso não haja DOI ou o DOI não confirme a obra com similaridade >= 85%, consulte por título em cascata:
-   - Passo A: Chame `search_crossref_tool(query_title=...)`.
-   - Passo B: Se a melhor similaridade no Crossref for < 85%, chame `search_openalex_tool(query_title=...)`.
-   - Passo C: Se a melhor similaridade no OpenAlex ainda for < 85%, chame `search_semantic_scholar_tool(query_title=...)`.
-3. Nunca julgue uma referência de memória sem invocar as tools.
-
-REGRAS DE JULGAMENTO (RN01 a RN05 e Matriz de Decisão):
-- VÁLIDA: Similaridade de título >= 85% E correspondência de autoria ALTA (1º autor coincide + >=50% dos demais) E (DOI válido correspondente ou ausente) E diferença de ano <= 2 anos.
-- SUSPEITA (Revisar):
-  * Título entre 60% e 84.99% com autores compatíveis.
-  * Título >= 85%, mas diferença de ano > 2 anos (RN04) ou correspondência de autoria apenas PARCIAL.
-  * Obra não encontrada nas APIs (< 60%), mas classificada como exceção de escopo RN05 (`excecao_escopo_rn05=True`: normas ISO/ABNT, legislação, sites/@misc/URL, monografias ou livros locais).
-- ALUCINADA:
-  * Caso 1 (Fantasma / Ghost Reference): Similaridade de título < 60% em todas as bases consultadas (e não é exceção RN05).
-  * Caso 2 (Quimera / Atribuição Falsa): Título encontrado (>= 60%), mas 0% de interseção nos sobrenomes dos autores (`SEM_INTERSECAO`).
-  * Caso 3 (DOI Falso/Trocado): DOI aponta para outro artigo sem relação (similaridade < 60% -> DOI Cruzado) ou DOI retorna 404 com título também ausente (< 60%).
-
-Ao concluir as consultas nas tools, responda APENAS com um objeto JSON contendo:
-- `status_final`: "VÁLIDA" | "SUSPEITA (Revisar)" | "ALUCINADA"
-- `categoria_taxonomia`: uma das categorias oficiais da taxonomia
-- `diagnostico_explicativo`: justificativa clara, objetiva e explicativa em português (RF05), citando os autores, anos, DOIs e percentuais encontrados nas bases oficiais vs. os citados no documento.
-- `acao_recomendada`: orientação prática ao autor do manuscrito.
-"""
-
-FINAL_JUDGMENT_JSON_SCHEMA: Dict[str, Any] = {
-    "type": "object",
-    "properties": {
-        "status_final": {
-            "type": "string",
-            "enum": [s.value for s in VerdictStatus],
-        },
-        "categoria_taxonomia": {
-            "type": "string",
-            "enum": [c.value for c in HallucinationCategory],
-        },
-        "diagnostico_explicativo": {"type": "string"},
-        "acao_recomendada": {"type": "string"},
-    },
-    "required": [
-        "status_final",
-        "categoria_taxonomia",
-        "diagnostico_explicativo",
-        "acao_recomendada",
-    ],
-}
-
 
 def build_deterministic_explanation(
     ref: ParsedReference,
@@ -192,7 +137,7 @@ def build_deterministic_explanation(
 
 
 class BibliographicAuditorAgent:
-    """Orquestrador principal do Agente de Auditoria com Tool-Calling no Gemini 3.8 Flash."""
+    """Orquestra a extração, a auditoria e a investigação bibliográfica."""
 
     def __init__(
         self,
@@ -213,24 +158,23 @@ class BibliographicAuditorAgent:
 
         self.genai_client: Optional[genai.Client] = None
         if self.config.gemini_api_key:
-            self.genai_client = genai.Client(api_key=self.config.gemini_api_key)
+            self.genai_client = genai.Client(
+                api_key=self.config.gemini_api_key,
+                http_options=genai.types.HttpOptions(
+                    timeout=30000,
+                    retry_options=genai.types.HttpRetryOptions(attempts=1),
+                ),
+            )
 
-    def _ensure_cascade_executed(self, toolkit: ReferenceAuditToolkit) -> None:
-        """Garante que o protocolo de busca encadeada (RN01 e RF04) foi cumprido integralmente
-        caso o LLM tenha encerrado prematuramente ou quando executado sem chave de API.
-        """
-        called_names = {t.tool_name for t in toolkit.traces}
-
-        # 1. RN01: Se houver DOI e resolve_doi_tool ainda não foi chamada
-        if toolkit.reference.doi and "resolve_doi_tool" not in called_names:
+    def _ensure_cascade_executed(self, toolkit: ReferenceAuditToolkit, notify: Callable[[str], None]) -> None:
+        if toolkit.reference.doi:
+            notify("Resolvendo DOI no Crossref…")
             toolkit.resolve_doi_tool(toolkit.reference.doi)
-            called_names.add("resolve_doi_tool")
 
-        # Se o DOI já caracterizou DOI Cruzado (Hijacked), não sobrescreve com busca textual
         if toolkit.doi_resolution_status == "CRUZADO_HIJACKED":
             return
 
-        # 2. RF04: Se ainda não encontrou correspondência forte (>= 85%) com autoria ALTA, segue a cascata
+        # RF04: Se ainda não encontrou correspondência forte (>= 85%) com autoria ALTA, segue a cascata
         def _needs_more_search() -> bool:
             if not toolkit.reference.titulo:
                 return False
@@ -241,22 +185,24 @@ class BibliographicAuditorAgent:
                 return False
             return True
 
-        if _needs_more_search() and "search_crossref_tool" not in called_names:
+        if _needs_more_search():
+            notify("Buscando pelo título em Crossref…")
             toolkit.search_crossref_tool(toolkit.reference.titulo)
-            called_names.add("search_crossref_tool")
 
-        if _needs_more_search() and "search_openalex_tool" not in called_names:
+        if _needs_more_search():
+            notify("Buscando pelo título em OpenAlex…")
             toolkit.search_openalex_tool(toolkit.reference.titulo)
-            called_names.add("search_openalex_tool")
 
-        if _needs_more_search() and "search_semantic_scholar_tool" not in called_names:
+        if _needs_more_search():
+            notify("Buscando pelo título em Semantic Scholar…")
             toolkit.search_semantic_scholar_tool(toolkit.reference.titulo)
-            called_names.add("search_semantic_scholar_tool")
 
     def audit_single_reference(
-        self, index: int, ref: ParsedReference
+        self, index: int, ref: ParsedReference,
+        notify: Callable[[str], None] = lambda _: None,
+        *, from_pdf: bool = False,
     ) -> ReferenceAuditResult:
-        """Audita uma única referência utilizando o ciclo de Tool-Calling do Gemini 3.8 Flash."""
+        """Audita uma referência consultando as bases acadêmicas e aplicando a matriz."""
         toolkit = ReferenceAuditToolkit(
             reference=ref,
             crossref=self.crossref,
@@ -264,138 +210,72 @@ class BibliographicAuditorAgent:
             semantic_scholar=self.semantic_scholar,
         )
 
-        llm_diagnosis: Optional[str] = None
-        llm_status: Optional[VerdictStatus] = None
-        llm_category: Optional[HallucinationCategory] = None
-        llm_action: Optional[str] = None
+        failed_hosts: set[str] = set()
 
-        if self.genai_client is not None:
-            try:
-                user_prompt = (
-                    "Audite a seguinte referência bibliográfica invocando as tools necessárias "
-                    "(inicie por `resolve_doi_tool` se houver DOI, depois use a cascata "
-                    "`search_crossref_tool` -> `search_openalex_tool` -> `search_semantic_scholar_tool`):\n\n"
-                    f"{json.dumps(ref.model_dump(), ensure_ascii=False, indent=2)}"
+        def observe(host: str, status: int | None) -> None:
+            if status is None:
+                notify(f"Aguardando resposta de {host}…")
+            elif status >= 400:
+                failed_hosts.add(host)
+                notify(f"Consulta a {host} falhou (HTTP {status}). Prosseguindo com as evidências disponíveis.")
+
+        with observe_requests(observe):
+            self._ensure_cascade_executed(toolkit, notify)
+
+        metrics = toolkit.best_metrics
+        official = toolkit.best_candidate or toolkit.doi_resolved_work
+        recovered_ocr = False
+        if (
+            metrics.doi_status == "INEXISTENTE_404"
+            and official and official.doi_oficial and ref.doi
+            and metrics.similaridade_titulo_pct >= 98
+            and metrics.correspondencia_autoria == "ALTA"
+        ):
+            cited_doi = ref.doi.strip().lower()
+            official_doi = official.doi_oficial.strip().lower()
+            if from_pdf and metrics.diferenca_ano == 0 and len(cited_doi) == len(official_doi):
+                differences = [
+                    (left, right) for left, right in zip(cited_doi, official_doi) if left != right
+                ]
+                recovered_ocr = (
+                    cited_doi.partition("/")[0] == official_doi.partition("/")[0]
+                    and len(differences) == 1
+                    and differences[0] in {("1", "i"), ("1", "l"), ("0", "o")}
                 )
-                interaction = self.genai_client.interactions.create(
-                    model=self.config.gemini_model,
-                    system_instruction=AUDITOR_SYSTEM_INSTRUCTION,
-                    input=user_prompt,
-                    tools=AGENT_TOOL_DECLARATIONS,
-                    generation_config={
-                        "seed": self.config.seed,
-                        "thinking_level": self.config.thinking_level,
-                    },
-                )
+            if cited_doi == official_doi or recovered_ocr:
+                metrics = metrics.model_copy(update={
+                    "doi_status": "VALIDO_CORRESPONDENTE",
+                    "doi_resolvido": True,
+                })
 
-                # Loop de Tool-Calling (máximo de 6 turnos de ferramentas por referência)
-                for _ in range(6):
-                    steps = interaction.steps or []
-                    function_calls = [
-                        s for s in steps if getattr(s, "type", None) == "function_call"
-                    ]
-                    if not function_calls:
-                        break
-
-                    function_results: List[Dict[str, Any]] = []
-                    for fc in function_calls:
-                        tool_output = toolkit.execute_tool(
-                            fc.name, dict(fc.arguments or {})
-                        )
-                        function_results.append(
-                            {
-                                "type": "function_result",
-                                "call_id": fc.id,
-                                "name": fc.name,
-                                "result": json.dumps(tool_output, ensure_ascii=False),
-                            }
-                        )
-
-                    interaction = self.genai_client.interactions.create(
-                        model=self.config.gemini_model,
-                        previous_interaction_id=interaction.id,
-                        system_instruction=AUDITOR_SYSTEM_INSTRUCTION,
-                        input=function_results,
-                        tools=AGENT_TOOL_DECLARATIONS,
-                        generation_config={
-                            "seed": self.config.seed,
-                            "thinking_level": self.config.thinking_level,
-                        },
-                    )
-
-                # Garante que todas as etapas obrigatórias da cascata foram executadas
-                self._ensure_cascade_executed(toolkit)
-
-                # Solicita ou extrai o julgamento estruturado final
-                raw_text = (interaction.output_text or "").strip()
-                if not raw_text.startswith("{"):
-                    summary_input = (
-                        "Com base nas evidências e métricas exatas retornadas pelas tools: "
-                        f"{json.dumps(toolkit.best_metrics.model_dump(), ensure_ascii=False)}, "
-                        "gere o veredito final estruturado em JSON."
-                    )
-                    final_interaction = self.genai_client.interactions.create(
-                        model=self.config.gemini_model,
-                        previous_interaction_id=interaction.id,
-                        system_instruction=AUDITOR_SYSTEM_INSTRUCTION,
-                        input=summary_input,
-                        response_format=FINAL_JUDGMENT_JSON_SCHEMA,
-                        response_mime_type="application/json",
-                        generation_config={
-                            "seed": self.config.seed,
-                            "thinking_level": self.config.thinking_level,
-                        },
-                    )
-                    raw_text = (final_interaction.output_text or "").strip()
-
-                parsed_judgment = json.loads(raw_text)
-                llm_status = VerdictStatus(parsed_judgment["status_final"])
-                llm_category = HallucinationCategory(
-                    parsed_judgment["categoria_taxonomia"]
-                )
-                llm_diagnosis = parsed_judgment.get("diagnostico_explicativo", "").strip()
-                llm_action = parsed_judgment.get("acao_recomendada", "").strip()
-            except Exception:
-                # Continua de forma resiliente garantindo execução completa das tools e Matriz de Decisão
-                pass
-
-        # Garante que o protocolo em cascata foi cumprido mesmo em modo sem chave ou fallback
-        self._ensure_cascade_executed(toolkit)
-
-        # Avalia a Matriz de Decisão oficial (Seção 4) sobre as melhores métricas obtidas pelas tools
-        matrix_verdict, matrix_category, matrix_action = evaluate_decision_matrix(
-            toolkit.best_metrics
-        )
-
-        # O status final e a categoria respeitam estritamente os limiares matemáticos da Matriz de Decisão (RNF03),
-        # combinando com a justificativa explicativa gerada pelo Agente (RF05).
-        final_status = matrix_verdict
-        final_category = matrix_category
-        final_action = llm_action if (llm_action and llm_status == matrix_verdict) else matrix_action
-
-        if llm_diagnosis and llm_status == matrix_verdict:
-            final_diagnosis = llm_diagnosis
-        else:
-            final_diagnosis = build_deterministic_explanation(
-                ref=ref,
-                official=toolkit.best_candidate or toolkit.doi_resolved_work,
-                metrics=toolkit.best_metrics,
-                verdict=final_status,
-                category=final_category,
+        verdict, category, action = evaluate_decision_matrix(metrics)
+        diagnosis = build_deterministic_explanation(ref, official, metrics, verdict, category)
+        if recovered_ocr:
+            diagnosis += (
+                f" O DOI extraído do PDF ({ref.doi}) difere do DOI cadastrado "
+                f"({official.doi_oficial}) por um caractere visualmente semelhante. "
+                "O registro oficial confirmou título, autoria e ano."
             )
+            action = "Use o DOI cadastrado ao copiar a referência do PDF."
+        if failed_hosts and category in {
+            HallucinationCategory.GHOST_REFERENCE, HallucinationCategory.DOI_FABRICATION
+        }:
+            verdict = VerdictStatus.SUSPEITA
+            category = HallucinationCategory.CONSULTA_INCONCLUSIVA
+            diagnosis = "A consulta ficou incompleta. Serviços com falha: " + ", ".join(sorted(failed_hosts))
+            action = "Repita a auditoria ou verifique a referência manualmente."
 
         return ReferenceAuditResult(
             indice=index,
             referencia_extraida=ref,
-            status_final=final_status,
-            categoria_taxonomia=final_category,
-            diagnostico_explicativo=final_diagnosis,
-            acao_recomendada=final_action,
-            melhor_correspondencia_oficial=(
-                toolkit.best_candidate or toolkit.doi_resolved_work
-            ),
-            metricas=toolkit.best_metrics,
+            status_final=verdict,
+            categoria_taxonomia=category,
+            diagnostico_explicativo=diagnosis,
+            acao_recomendada=action,
+            melhor_correspondencia_oficial=official,
+            metricas=metrics,
             rastro_tools=toolkit.traces,
+            falhas_consulta=sorted(failed_hosts),
         )
 
     def audit_file(
@@ -405,30 +285,63 @@ class BibliographicAuditorAgent:
     ) -> AuditReport:
         """Executa o fluxo completo (RF01 -> RF06):
         1. Isola a seção de referências do arquivo (.pdf, .bib, .tex) respeitando RNF02.
-        2. Estrutura cada referência em JSON via Parser Semântico (RF03).
-        3. Audita cada referência via Tool-Calling (RN01–RN05, RF04, RF05).
+        2. Estrutura as referências localmente, com auxílio opcional do Gemini.
+        3. Audita em Python e investiga casos ambíguos em lote.
         4. Consolida o relatório final (RF06).
         """
-        path = Path(file_path)
-        source_format, isolated_block = extract_references_from_file(path)
+        def progress(message: str, current: int = 0, total: int = 0) -> None:
+            if progress_callback:
+                progress_callback(current, total, message)
 
+        path = Path(file_path)
+        progress("Lendo o arquivo e localizando a bibliografia…")
+        source_format, isolated_block = extract_references_from_file(path, notify=progress)
+        warnings = []
+        if not isolated_block.strip():
+            warnings.append("Bibliografia não localizada. Forneça um arquivo .bib com as referências.")
+        extraction_calls = 0
+
+        def parsing_progress(message: str) -> None:
+            nonlocal extraction_calls
+            extraction_calls += 1
+            progress(message)
+
+        progress("Estruturando referências localmente…")
         parsed_refs = self.parser.parse_references(
-            isolated_block, source_format=source_format
+            isolated_block,
+            source_format=source_format,
+            before_gemini=parsing_progress,
+            notify=progress,
         )
+        if isolated_block.strip() and not parsed_refs:
+            warnings.append("Nenhuma referência pôde ser estruturada. Confira a bibliografia ou forneça um .bib.")
+
+        if source_format == "PDF":
+            expected = expected_numbered_references(isolated_block)
+            if parsed_refs and expected and len(parsed_refs) < expected:
+                warnings.append(
+                    f"Bibliografia localizada. Foram separadas {len(parsed_refs)} de até "
+                    f"{expected} referências numeradas. Alguns itens podem ter sido combinados."
+                )
 
         results: List[ReferenceAuditResult] = []
         total = len(parsed_refs)
-
         for idx, ref in enumerate(parsed_refs, start=1):
-            if progress_callback:
-                progress_callback(
-                    idx,
-                    total,
-                    f"Auditando referência [{idx}/{total}]: {ref.titulo[:65]}...",
-                )
-            result = self.audit_single_reference(idx, ref)
-            results.append(result)
+            def reference_progress(message: str) -> None:
+                progress(f"Referência {idx}/{total} · {message}", idx, total)
 
+            reference_progress(f"Auditando {ref.titulo[:65] or 'referência sem título'}…")
+            results.append(self.audit_single_reference(
+                idx, ref, reference_progress, from_pdf=source_format == "PDF"
+            ))
+
+        investigation_calls = investigate_references(
+            results, self.genai_client, self.config,
+            {"Crossref": self.crossref, "OpenAlex": self.openalex,
+             "Semantic Scholar": self.semantic_scholar},
+            progress,
+        )
+        progress("Consolidando o relatório…")
         preview = isolated_block[:1500] + (
             "\n... [truncado na visualização]" if len(isolated_block) > 1500 else ""
         )
@@ -439,6 +352,9 @@ class BibliographicAuditorAgent:
             data_hora_iso=datetime.now(timezone.utc).isoformat(),
             secao_referencias_isolada_preview=preview,
             resultados=results,
+            chamadas_gemini_extracao=extraction_calls,
+            chamadas_gemini_investigacao=investigation_calls,
+            avisos=warnings,
         )
         report.recompute_totals()
         return report

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Any, Dict, List, Optional
+from typing import Callable, Any, Dict, List, Optional
 from google import genai
 
 from aluc.config import AlucConfig
@@ -91,7 +91,9 @@ def _heuristic_parse_plain_references(raw_block: str) -> List[ParsedReference]:
         ]
     else:
         # Divide por numeração [1], 1., ou parágrafos duplos
-        numbered = re.split(r"(?m)(?=^\s*(?:\[\d+\]|\d+\.\s+))", raw_block.strip())
+        bracketed = r"(?m)(?=^[ \t]*\[\d+\])"
+        marker = bracketed if len(re.findall(bracketed, raw_block)) >= 2 else r"(?m)(?=^\s*(?:\[\d+\]|\d+\.\s+))"
+        numbered = re.split(marker, raw_block.strip())
         if len([x for x in numbered if x.strip()]) > 1:
             entries = [x.strip() for x in numbered if x.strip()]
         else:
@@ -119,17 +121,29 @@ def _heuristic_parse_plain_references(raw_block: str) -> List[ParsedReference]:
         year_match = re.search(r"\b(1[89]\d{2}|20\d{2})\b", clean_entry)
         year = int(year_match.group(1)) if year_match else None
 
-        # Tenta extrair título entre aspas ou após o ano/ponto dos autores
-        quoted_title = re.search(r'["“``]([^"”\'\']{10,})["”\'\']', clean_entry)
-        if quoted_title:
+        # Em referências ACM, o ano separa o título de uma lista que pode conter iniciais.
+        # O OCR por vezes lê o ponto antes ou depois do ano como hífen.
+        unnumbered = re.sub(r"^\[\d+\]\s*|^\d+\.\s*", "", clean_entry)
+        author_year = re.search(
+            r"[.\-–—]\s+((?:18|19|20)\d{2})[a-z]?\s*[.\-–—]\s+(?=\S)",
+            unnumbered,
+        )
+        quoted_title = re.search(r'["“``]([^"”\'\']{10,})["”\'\']', unnumbered)
+        if author_year and int(author_year[1]) == year and (
+            not quoted_title or quoted_title.start() < author_year.end()
+        ):
+            before_title = unnumbered[:author_year.start()]
+            title, _, after_title = unnumbered[author_year.end():].partition(". ")
+            year = int(author_year[1])
+        elif quoted_title:
             title = quoted_title.group(1).strip().rstrip(".")
-            before_title = clean_entry[: quoted_title.start()].strip()
-            after_title = clean_entry[quoted_title.end() :].strip()
+            before_title = unnumbered[: quoted_title.start()].strip()
+            after_title = unnumbered[quoted_title.end() :].strip()
         else:
             # Divide por pontos: [0] = autores (ou autores + ano), [1] = título, [2] = veículo
             segments = [
                 s.strip()
-                for s in re.split(r"\.\s+", re.sub(r"^\[\d+\]\s*|^\d+\.\s*", "", clean_entry))
+                for s in re.split(r"\.\s+", unnumbered)
                 if s.strip()
             ]
             if len(segments) >= 2:
@@ -148,9 +162,11 @@ def _heuristic_parse_plain_references(raw_block: str) -> List[ParsedReference]:
 
         # Limpa prefixo numérico e ano do bloco de autores
         before_title = re.sub(r"^\[\d+\]\s*|^\d+\.\s*", "", before_title)
-        before_title = re.sub(r"\(\s*\d{4}[a-z]?\s*\)\.?", "", before_title).strip().rstrip(".,:")
+        before_title = re.sub(r"\(\s*\d{4}[a-z]?\s*\)\.?", "", before_title)
+        before_title = re.sub(r"(?:\s|[-–—])+(?:18|19|20)\d{2}[a-z]?$", "", before_title.strip().rstrip(".,:"))
+        before_title = before_title.strip().rstrip(".,:-–—")
         authors = [
-            a.strip()
+            a.strip().rstrip(",")
             for a in re.split(r";|\s+and\s+|\s+e\s+|,\s+(?=[A-Z][a-z]+\s+[A-Z])", before_title)
             if a.strip() and not re.fullmatch(r"\d{4}", a.strip())
         ]
@@ -173,6 +189,14 @@ def _heuristic_parse_plain_references(raw_block: str) -> List[ParsedReference]:
     return results
 
 
+def expected_numbered_references(block: str) -> int | None:
+    """Usa a sequência de marcadores para detectar quebras na extração do PDF."""
+    markers = [int(number) for number in re.findall(r"(?m)^\s*\[(\d{1,4})\]", block)]
+    if len(markers) >= 2 and markers[0] == 1 and markers == sorted(set(markers)):
+        return markers[-1]
+    return None
+
+
 class SemanticReferenceParser:
     """Agente de estruturação semântica (RF03) usando Gemini 3.8 Flash via Interactions API."""
 
@@ -180,22 +204,35 @@ class SemanticReferenceParser:
         self.config = config or AlucConfig.from_env()
         self.client: Optional[genai.Client] = None
         if self.config.gemini_api_key:
-            self.client = genai.Client(api_key=self.config.gemini_api_key)
+            self.client = genai.Client(
+                api_key=self.config.gemini_api_key,
+                http_options=genai.types.HttpOptions(
+                    timeout=30000,
+                    retry_options=genai.types.HttpRetryOptions(attempts=1),
+                ),
+            )
 
     def parse_references(
-        self, raw_references_block: str, source_format: str = "PDF"
+        self,
+        raw_references_block: str,
+        source_format: str = "PDF",
+        before_gemini: Callable[[str], None] = lambda _: None,
+        notify: Callable[[str], None] = lambda _: None,
     ) -> List[ParsedReference]:
         """Estrutura o bloco bruto de referências em uma lista de objetos ParsedReference (RF03)."""
         if not raw_references_block or not raw_references_block.strip():
             return []
 
-        # Se for arquivo .bib bem formado e não houver necessidade de fallback ou se o cliente LLM não estiver configurado
-        if source_format.upper() == "BIB" and not self.client:
+        if source_format.upper() == "BIB":
             return parse_bibtex_entries_deterministic(raw_references_block)
 
-        if not self.client:
-            return _heuristic_parse_plain_references(raw_references_block)
+        local = _heuristic_parse_plain_references(raw_references_block)
+        expected = expected_numbered_references(raw_references_block) if source_format.upper() == "PDF" else None
+        complete = local and all(ref.titulo and ref.autores for ref in local)
+        if not self.client or (complete and (expected is None or len(local) >= expected)):
+            return local
 
+        before_gemini("Aguardando Gemini para estruturar a bibliografia…")
         try:
             prompt = (
                 f"Formato de origem: {source_format}\n\n"
@@ -203,6 +240,8 @@ class SemanticReferenceParser:
                 f"```\n{raw_references_block}\n```"
             )
             interaction = self.client.interactions.create(
+                automatic_continuation=False,
+                store=False,
                 model=self.config.gemini_model,
                 system_instruction=PARSER_SYSTEM_INSTRUCTION,
                 input=prompt,
@@ -217,14 +256,10 @@ class SemanticReferenceParser:
             data = json.loads(output_text)
             refs_raw = data.get("referencias") or []
             parsed = [ParsedReference.model_validate(item) for item in refs_raw]
-            if parsed:
+            if parsed and all(ref.titulo for ref in parsed) and len(parsed) >= len(local):
                 return parsed
         except Exception:
-            # Em caso de falha de rede/cota na etapa de parsing, utiliza o extrator determinístico local
             pass
 
-        if source_format.upper() == "BIB":
-            bib_refs = parse_bibtex_entries_deterministic(raw_references_block)
-            if bib_refs:
-                return bib_refs
-        return _heuristic_parse_plain_references(raw_references_block)
+        notify("Extração assistida indisponível ou incompleta. Usando os resultados locais.")
+        return local

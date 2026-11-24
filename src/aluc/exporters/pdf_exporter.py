@@ -127,6 +127,11 @@ def export_report_to_pdf(
     )
     pdf.ln(5)
 
+    pdf.set_font("Helvetica", "", 9)
+    for text in [report.gemini_summary, *report.avisos]:
+        pdf.multi_cell(0, 5, _sanitize_latin1(text), new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(2)
+
     # 2. Detalhamento por Referência
     pdf.set_font("Helvetica", "B", 12)
     pdf.cell(
@@ -217,6 +222,16 @@ def export_report_to_pdf(
             new_x="LMARGIN",
             new_y="NEXT",
         )
+        investigation_lines = []
+        if res.falhas_consulta:
+            investigation_lines.append("Falhas de consulta: " + ", ".join(res.falhas_consulta))
+        if res.estado_investigacao:
+            investigation_lines.append(res.estado_investigacao)
+        if res.correcao_verificada:
+            investigation_lines.extend([res.correcao_verificada.citation, res.correcao_verificada.bibtex])
+        pdf.set_font("Helvetica", "", 9)
+        for text in investigation_lines:
+            pdf.multi_cell(0, 5, _sanitize_latin1(text), new_x="LMARGIN", new_y="NEXT")
         pdf.ln(4)
 
     pdf_bytes = bytes(pdf.output())

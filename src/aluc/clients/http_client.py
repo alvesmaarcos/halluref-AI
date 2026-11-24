@@ -2,12 +2,28 @@
 
 from __future__ import annotations
 
+from contextlib import contextmanager
+from contextvars import ContextVar
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 from urllib.parse import urlparse
 import httpx
 
 from aluc.config import AlucConfig
+
+
+_request_observer: ContextVar[Callable[[str, int | None], None] | None] = ContextVar(
+    "request_observer", default=None
+)
+
+
+@contextmanager
+def observe_requests(observer: Callable[[str, int | None], None]):
+    token = _request_observer.set(observer)
+    try:
+        yield
+    finally:
+        _request_observer.reset(token)
 
 
 class PoliteHttpClient:
@@ -50,14 +66,29 @@ class PoliteHttpClient:
         self, url: str, params: Optional[Dict[str, Any]] = None
     ) -> tuple[int, Optional[Dict[str, Any]]]:
         """Executa GET respeitando o Rate Limiting e retorna (status_code, json_dict_ou_None)."""
+        observe = _request_observer.get()
+        parsed = urlparse(url)
+        host = parsed.netloc
+        if observe:
+            observe(host, None)
         self._wait_for_rate_limit(url)
         try:
             response = self._client.get(url, params=params)
-            if response.status_code == 200:
-                return 200, response.json()
-            return response.status_code, None
+            status = response.status_code
+            data = response.json() if status == 200 else None
+            if status == 200 and not isinstance(data, dict):
+                status, data = 502, None
         except httpx.HTTPError:
-            return 503, None
+            status, data = 503, None
+        except ValueError:
+            status, data = 502, None
+        is_doi_lookup = (
+            (host == "api.crossref.org" and parsed.path.startswith("/works/"))
+            or (host == "doi.org" and parsed.path.startswith("/api/handles/"))
+        )
+        if observe and not (status == 404 and is_doi_lookup):
+            observe(host, status)
+        return status, data
 
     def close(self) -> None:
         self._client.close()
